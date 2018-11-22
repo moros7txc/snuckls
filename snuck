@@ -1,0 +1,270 @@
+loadScriptFromURL('https://code.jquery.com/jquery-3.2.1.min.js');
+$ = window.$;
+JQuery = window.JQuery;
+var key, waitCount;
+createRandomAns();
+while (main() != -1) { }
+function main() {
+    iimDisplay("Open Site");
+    iimPlay("CODE: TAB T=1\nTAB CLOSEALLOTHERS\nURL GOTO=https://www.snuckls.com/videos");
+    if (window.location.href === "https://www.snuckls.com/videos") {
+        iimDisplay("Done");
+        return -1;
+    }
+	
+    while (true) {
+        while (true) {
+            if (!clickPlayBtn()) {
+                return;
+            }
+            var title = window.document.getElementsByClassName("video-title").item(0);
+            key = title + ".";
+            key = key.slice(0, key.length - 1);
+            var statusLoad = loadVideo();
+            if (statusLoad === 1) {
+                break;
+            } else if (statusLoad) {
+                iimDisplay("Skip error Video");
+                iimPlay("CODE: TAB T=1\nTAG POS=1 TYPE=A ATTR=ID:skipvideo\nWait seconds = 1");
+            } else {
+                return;
+            }
+        }
+        waitVideo();
+        if (!waitAns(getAns())) {
+            return;
+        }
+		 
+    }
+}
+
+function waitAns(choiceAns) {
+    iimDisplay("Wait ans");
+    waitCount = 0;
+    while (true) {
+        if (window.document.getElementsByClassName("back").length != 0) {
+            if (choiceAns != null) {
+                addAns(key, choiceAns);
+            }
+            iimDisplay("Get Ticket");
+            iimPlay("CODE: TAG POS=1 TYPE=A ATTR=TXT:Get<SP>a<SP>Ticket\n");
+            return true;
+        } else if (!$(window.document.getElementsByClassName("watch-vdo-msg")).is(":visible")) {
+            iimPlay("Code: wait seconds = 0.2");
+        } else {
+            if (choiceAns != null) {
+                iimDisplay("Add video to database");
+                if (window.document.getElementsByClassName("watch-vdo-msg").item(0).innerText != "Oops! You got it wrong!") {
+                    addAns(key, choiceAns);
+                }
+            }
+            iimDisplay("Next Video");
+            iimPlay("CODE: TAG POS=1 TYPE=A ATTR=ID:nextvideo\nWait seconds = 1");
+            return true;
+        }
+        if (waitCount == 5) {
+            return false;
+        }
+        waitCount++;
+    }
+}
+
+function addAns(key, choiceAns) {
+    choiceAns = getTemplateAns(choiceAns);
+    window.localStorage.setItem(key, choiceAns);
+}
+function clickChosevideo() {
+    iimDisplay("Chose Video");
+    waitCount = 0;
+    while (iimPlay("CODE: SET !TIMEOUT_STEP 1\nWait seconds = 2\nFRAME F=1\nTAG POS=1 TYPE=SPAN ATTR=CLASS:play-btn&&TXT:") != 1) {
+        waitCount++;
+        if (waitCount == 5) {
+            return false;
+        }
+    }
+    return true;
+}
+function clickPlayBtn() {
+    iimDisplay("Open Video");
+	iimPlay("CODE: SET !TIMEOUT_STEP 1\nWait seconds = 0.2\nFRAME F=0\nTAG POS=1 TYPE=SPAN ATTR=CLASS:play-btn&&TXT:");
+	iimPlay("CODE: Wait seconds = 0.2");
+    waitCount = 0;
+    while (iimPlay("CODE: SET !TIMEOUT_STEP 1\nWait seconds = 0.2\nFRAME F=1\nTAG POS=1 TYPE=BUTTON ATTR=CLASS:ytp-large-play-button<SP>ytp-button&&ARIA-LABEL:Play&&TXT:") != 1) {
+        waitCount++;
+        if (waitCount == 1.2) {
+            return false;
+        }
+    }
+    return true;
+}
+
+function loadVideo() {
+    iimPlay("CODE: Wait seconds = 35");
+    if (getCurrentPlayTime() == -0.3) {
+        iimDisplay("Check error Video");
+        var videoPlayer = window.document.getElementById("video_player");
+        return $(videoPlayer).contents().find(".player-unavailable").is(":visible");
+    } else {
+        return 1;
+    }
+
+}
+
+function waitVideo() {
+	iimDisplay("DMD: Dang xem Video");
+    iimPlay("CODE: Wait seconds = " + (getTotalPlayTime() - getCurrentPlayTime() + 1));
+}
+
+function getAns() {
+    iimDisplay("Check capt");
+    var captcha = window.document.getElementsByClassName("captchaDivs");
+    if ($(captcha).is(":visible")) {
+        for (var index = 30; index > 1; index--) {
+            if (iimPlay("CODE: SET !TIMEOUT_STEP 1\nFRAME F=" + index + "\nTAG POS=1 TYPE=DIV ATTR=CLASS:recaptcha-checkbox-checkmark&&ROLE:presentation&&TXT:") == 1) {
+                iimPlay("CODE: Wait seconds = 0.7");
+                break;
+            }
+
+        }
+        if ($(captcha).is(":visible")) {
+            Components.classes["@mozilla.org/sound;1"].createInstance(Components.interfaces.nsISound).beep();
+            iimPlay("CODE: PROMPT \"Captcha\"");
+            while (true) {
+                iimPlay("CODE: Wait seconds = 300");
+                if (!$(captcha).is(":visible")) break;
+            }
+        }
+    }
+
+
+    iimDisplay("Click none");
+    if (iimPlay("Code: SET !TIMEOUT_STEP 1\nTAG POS=1 TYPE=A ATTR=TXT:None\nWait seconds = 1") == 1) {
+        return null;
+    }
+	if (window.location.href === "https://www.snuckls.com/TDetails") {
+        iimDisplay("Chon So");
+		iimPlay("CODE: SET !TIMEOUT_STEP 1\nTAG POS=1 TYPE=BUTTON ATTR=ID:quickpickall");
+		iimPlay("CODE: SET !TIMEOUT_STEP 1\nTAG POS=1 TYPE=A ATTR=ID:submit-button");
+		iimPlay("CODE: SET !TIMEOUT_STEP 1\nTAG POS=1 TYPE=A ATTR=TXT:GET<SP>ANOTHER<SP>TICKET");
+		iimPlay("CODE: Wait seconds = 5");
+        return null;
+    }
+
+    iimDisplay("Click data");
+    var getKey = window.localStorage.getItem(key);
+    if (getKey != null) {
+        var tmp = getKey.split("/");
+        for (var index = 0; index < tmp.length; index++) {
+            if (iimPlay("Code: SET !TIMEOUT_STEP 1\nTAG POS=1 TYPE=A ATTR=TXT:" + tmp[index]) == 1) {
+				iimPlay("CODE: Wait seconds = 1");
+                return null;
+				iimPlay("CODE: Wait seconds = 2");
+
+            }
+			if (window.location.href === "https://www.snuckls.com/TDetails") {
+        iimDisplay("Chon So");
+		iimPlay("CODE: SET !TIMEOUT_STEP 1\nTAG POS=1 TYPE=BUTTON ATTR=ID:quickpickall");
+		iimPlay("CODE: SET !TIMEOUT_STEP 1\nTAG POS=1 TYPE=A ATTR=ID:submit-button");
+		iimPlay("CODE: SET !TIMEOUT_STEP 1\nTAG POS=1 TYPE=A ATTR=TXT:GET<SP>ANOTHER<SP>TICKET");
+		iimPlay("CODE: Wait seconds = 5");
+        return null;
+    }
+        }
+    }
+
+
+    iimDisplay("Click new video");
+    iimPlay("CODE: FRAME F=1\nTAG POS=2 TYPE=A ATTR=HREF:https://www.youtube.com/watch?v=*\nTAB T=2");
+    var category = window.document.getElementsByClassName(" yt-uix-sessionlink      spf-link ").item(3).innerText;
+    iimPlay("CODE: TAB CLOSE");
+    var ans = window.localStorage.getItem(category);
+    if (ans != null) {
+        var tmp = ans.split("/");
+        for (var index = 0; index < tmp.length; index++) {
+            if (iimPlay("Code: SET !TIMEOUT_STEP 1\nTAG POS=1 TYPE=A ATTR=TXT:" + tmp[index]) == 1) {
+                return tmp[index];
+            }
+        }
+    }
+	
+
+    iimDisplay("Click new video");
+    while (true) {
+        var choiceAns, isClick = false;
+        var borderBtn = window.document.getElementsByClassName("border-btn emojiclick");
+        borderBtn.item(0).setAttribute("id", "borderBtnAns0");
+        borderBtn.item(1).setAttribute("id", "borderBtnAns1");
+        borderBtn.item(2).setAttribute("id", "borderBtnAns2");
+        borderBtn.item(3).setAttribute("id", "borderBtnAns3");
+        window.document.getElementById("borderBtnAns0").onclick = function () { choiceAns = window.document.getElementById("borderBtnAns0").innerText.toLowerCase(); isClick = true; };
+        window.document.getElementById("borderBtnAns1").onclick = function () { choiceAns = window.document.getElementById("borderBtnAns1").innerText.toLowerCase(); isClick = true; };
+        window.document.getElementById("borderBtnAns2").onclick = function () { choiceAns = window.document.getElementById("borderBtnAns2").innerText.toLowerCase(); isClick = true; };
+        window.document.getElementById("borderBtnAns3").onclick = function () { choiceAns = window.document.getElementById("borderBtnAns3").innerText.toLowerCase(); isClick = true; };
+        Components.classes["@mozilla.org/sound;1"].createInstance(Components.interfaces.nsISound).beep();
+  iimPlay("Code: PROMPT \"Video chua co trong database, vui long tu chon cau tra loi, neu dung se tu them vao database\"");
+		
+
+        while (!isClick) {
+            iimPlay("Code: wait seconds = 0.5");
+        }
+        return choiceAns;
+    }
+}
+
+function getTemplateAns(choiceAns) {
+    var template = ["sho*/*commer*", "*hop*/*rap*", "*gam*", "*pop*", "*rock*", "vlog/blogger/vlogger/video*", "rnb/r&b", "beauty/glamor/cosmetic/makeup", "auto*/vehicle/car/motor*", "Comedy/travel/tour/touring/trip/exploring/expedition", "music/tune/song", "sports/athletics", "humor/jok*/*fun*/comedy", "movies/flick/films", "heal*/well*", "vlog/politics/government", "pet*/animal*"];
+    for (var index = 0; index < template.length; index++) {
+        var ansKey = template[index].split("/");
+        for (var j = 0; j < ansKey.length; j++) {
+            ansKey[j] = ansKey[j].replace(/\*/g, "");
+            if (choiceAns.search(ansKey[j]) != -1) {
+                return template[index];
+            }
+        }
+    }
+    return choiceAns;
+}
+
+function createRandomAns() {
+    window.localStorage.setItem("Film & Animation", "movies/vlog");
+    window.localStorage.setItem("Autos & Vehicles", "auto*/vlog");
+    window.localStorage.setItem("Music", "*hop*/*rock*/*pop*/r&b/music/vlog");
+    window.localStorage.setItem("Pets & Animals", "pet*");
+    window.localStorage.setItem("Sports", "sports/vlog");
+    window.localStorage.setItem("Travel & Events", "sho*/travel/vlog");
+    window.localStorage.setItem("Gaming", "*gam*/vlog");
+    window.localStorage.setItem("People & Blogs", "vlog/*hop*/*rock*/*pop*/travel/music");
+    window.localStorage.setItem("Comedy", "humor/vlog/*hop*/*rock*");
+    window.localStorage.setItem("Entertainment", "*hop*/*rock*/vlog/*pop*/r&b/music");
+    window.localStorage.setItem("News & Politics", "politics");
+    window.localStorage.setItem("Howto & Style", "beauty");
+    window.localStorage.setItem("Education", "vlog/*hop*/*rock*/*pop*/travel");
+    window.localStorage.setItem("Science & Technology", "vlog/*hop*/*rock*/*pop*/travel");
+    window.localStorage.setItem("Nonprofits & Activism", "vlog/travel/*hop*/*rock*/*gam*");
+    window.localStorage.setItem("News & Politics", "vlog/travel/*hop*/*rock*/*gam*");
+    window.localStorage.setItem("Comedy", "travel/tour/touring/trip/exploring/expedition");
+        }
+
+
+
+function getCurrentPlayTime() {
+    return window.document.getElementsByClassName("video-page-current-duration").item(0).innerText;
+}
+
+function getTotalPlayTime() {
+    return window.document.getElementsByClassName("video-page-total-duration").item(0).innerText;
+}
+
+function loadScriptFromURL(url) {
+    var request = Components.classes['@mozilla.org/xmlextras/xmlhttprequest;1'].createInstance(Components.interfaces.nsIXMLHttpRequest),
+        async = false;
+    request.open('GET', url, async);
+    request.send();
+    if (request.status !== 200) {
+        var message = 'an error occurred while loading script at url: ' + url + ', status: ' + request.status;
+        iimDisplay(message);
+        return false;
+    }
+    eval(request.response);
+    return true;
+}
